@@ -1,9 +1,18 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-# Mapping Network: Transforms a latent vector into a higher-dimensional space using multiple layers
 class MappingNetwork(nn.Module):
+    """
+    A mapping network that transforms a latent vector (z) into a higher-dimensional space.
+    This is achieved using multiple linear layers and LeakyReLU activation functions.
+
+    Args:
+        latent_dim (int): Dimension of the input latent vector.
+        num_layers (int): Number of layers in the mapping network.
+
+    Methods:
+        forward(z): Forward pass through the mapping network to transform the latent vector.
+    """
     def __init__(self, latent_dim, num_layers):
         super().__init__()
         layers = []
@@ -17,8 +26,17 @@ class MappingNetwork(nn.Module):
     def forward(self, z):
         return self.mapping(z)  # Forward pass through the mapping network
 
-# Adaptive Instance Normalization (AdaIN): Normalizes the input and applies style modulation
 class AdaIN(nn.Module):
+    """
+    Adaptive Instance Normalization (AdaIN) layer that normalizes the input and applies style modulation.
+    
+    Args:
+        in_channels (int): Number of channels in the input feature map.
+        latent_dim (int): Dimension of the latent vector used for generating scale and bias.
+
+    Methods:
+        forward(x, w): Forward pass that applies AdaIN to the input features x using style vector w.
+    """
     def __init__(self, in_channels, latent_dim):
         super(AdaIN, self).__init__()
         self.norm = nn.InstanceNorm2d(in_channels)  # Instance normalization layer
@@ -31,8 +49,22 @@ class AdaIN(nn.Module):
         bias = self.style_bias(w).unsqueeze(2).unsqueeze(3)  # Compute bias factor
         return scale * x_norm + bias  # Apply scale and bias to normalized input
 
-# Modulated Convolutional Layer: Convolutional layer with modulation and optional demodulation
 class ModulatedConv2d(nn.Module):
+    """
+    Modulated Convolutional Layer with optional demodulation and AdaIN.
+    This layer uses a modulation network to adapt weights based on a latent vector.
+
+    Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        kernel_size (int): Size of the convolutional kernel.
+        latent_dim (int): Dimension of the latent vector used for modulation.
+        demodulate (bool): Whether to apply demodulation (default: True).
+        use_adain (bool): Whether to use AdaIN (default: False).
+
+    Methods:
+        forward(x, w): Forward pass applying modulated convolution and optional demodulation/AdaIN.
+    """
     def __init__(self, in_channels, out_channels, kernel_size, latent_dim, demodulate=True, use_adain=False):
         super(ModulatedConv2d, self).__init__()
         self.demodulate = demodulate  # Whether to apply demodulation
@@ -86,8 +118,20 @@ class ModulatedConv2d(nn.Module):
 
         return x
 
-# Synthesis Block: A building block in the synthesis network, includes multiple modulated convolutions
 class SynthesisBlock(nn.Module):
+    """
+    A synthesis block consisting of multiple modulated convolutional layers.
+    It constructs a part of the image synthesis network by sequentially applying convolutions and activations.
+
+    Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        latent_dim (int): Dimension of the latent vector used for modulation.
+        use_adain (bool): Whether to use AdaIN (default: True).
+
+    Methods:
+        forward(x, w): Forward pass through the synthesis block with input x and style vector w.
+    """
     def __init__(self, in_channels, out_channels, latent_dim, use_adain=True):
         super(SynthesisBlock, self).__init__()
         # Sequence of modulated convolutions followed by an activation function
@@ -118,8 +162,19 @@ class SynthesisBlock(nn.Module):
         rgb = self.to_rgb(x, w)  # Generate RGB image
         return x, rgb
 
-# Synthesis Network: Constructs the final image from the latent vector by stacking synthesis blocks
 class SynthesisNetwork(nn.Module):
+    """
+    Synthesis network that constructs the final image from the latent vector.
+    This network consists of multiple synthesis blocks stacked together.
+
+    Args:
+        latent_dim (int): Dimension of the latent vector.
+        num_blocks (int): Number of synthesis blocks in the network.
+
+    Methods:
+        forward(w): Forward pass to generate an image from the latent vector w.
+        upsample(x): Upsample the input image x to a higher resolution.
+    """
     def __init__(self, latent_dim, num_blocks):
         super().__init__()
         self.num_blocks = num_blocks
@@ -148,8 +203,18 @@ class SynthesisNetwork(nn.Module):
     def upsample(self, x):
         return nn.functional.interpolate(x, scale_factor=2, mode='bilinear', align_corners=False)  # Upsample the image
 
-# StyleGAN Generator: Combines the mapping and synthesis networks to generate images from latent vectors
 class StyleGANGenerator(nn.Module):
+    """
+    StyleGAN Generator that combines a mapping network and a synthesis network to generate images from latent vectors.
+
+    Args:
+        latent_dim (int): Dimension of the latent vector.
+        num_mapping_layers (int): Number of layers in the mapping network.
+        num_synthesis_blocks (int): Number of synthesis blocks in the synthesis network.
+
+    Methods:
+        forward(z): Forward pass to generate an image from the input latent vector z.
+    """
     def __init__(self, latent_dim, num_mapping_layers, num_synthesis_blocks):
         super().__init__()
         self.mapping_network = MappingNetwork(latent_dim, num_mapping_layers)  # Initialize mapping network
@@ -161,8 +226,19 @@ class StyleGANGenerator(nn.Module):
         img = self.synthesis_network(w)  # Generate image from the latent vector
         return img
 
-# Minibatch Discrimination Layer: Encourages the model to differentiate between different instances in a batch
 class MinibatchDiscrimination(nn.Module):
+    """
+    Minibatch Discrimination layer that encourages the model to differentiate between different instances in a batch.
+    It helps in generating diverse outputs and prevents mode collapse in GANs.
+
+    Args:
+        in_features (int): Number of input features.
+        out_features (int): Number of output features.
+        kernel_dims (int): Dimension of the kernel matrix used for discrimination.
+
+    Methods:
+        forward(x): Forward pass applying minibatch discrimination to the input features x.
+    """
     def __init__(self, in_features, out_features, kernel_dims):
         super(MinibatchDiscrimination, self).__init__()
         self.T = nn.Parameter(torch.randn(in_features, out_features, kernel_dims))  # Learnable matrix for minibatch discrimination
@@ -177,8 +253,18 @@ class MinibatchDiscrimination(nn.Module):
         features = torch.exp(-abs_diff)  # Apply exponential to differences
         return torch.cat([x_flat, features.sum(0)], 1)  # Concatenate original and minibatch features
 
-# Discriminator: Classifies images as real or fake and extracts intermediate features for analysis
 class Discriminator(nn.Module):
+    """
+    Discriminator network that classifies images as real or fake and extracts intermediate features for analysis.
+    This network consists of multiple convolutional blocks and a minibatch discrimination layer.
+
+    Args:
+        img_resolution (int): Resolution of the input image.
+        base_channels (int): Base number of channels for the convolutional layers (default: 64).
+
+    Methods:
+        forward(x, return_features=False): Forward pass to classify the input image and optionally return intermediate features.
+    """
     def __init__(self, img_resolution, base_channels=64):
         super().__init__()
         self.blocks = nn.ModuleList()
