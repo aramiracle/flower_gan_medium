@@ -267,7 +267,7 @@ class Discriminator(nn.Module):
     Methods:
         forward(x, return_features=False): Forward pass to classify the input image and optionally return intermediate features.
     """
-    def __init__(self, img_resolution, base_channels=64, dropout_prob=0.3):
+    def __init__(self, img_resolution, base_channels=64, dropout_prob=0.1):
         super().__init__()
         self.blocks = nn.ModuleList()
         channels = base_channels
