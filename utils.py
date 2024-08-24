@@ -215,14 +215,17 @@ class GANTrainer:
         for epoch in range(self.start_epoch, num_epochs):
             # Adjust training parameters based on epoch
             if epoch < num_epochs // 3:
+                stage = 1
                 num_gen_updates = 1
                 max_grad_norm_g = self.max_grad_norm * 2**1
                 max_grad_norm_d = self.max_grad_norm / 2**1
             elif epoch < 2 * num_epochs // 3:
+                stage = 2
                 num_gen_updates = 3
                 max_grad_norm_g = self.max_grad_norm * 2**3
                 max_grad_norm_d = self.max_grad_norm / 2**3
             else:
+                stage = 3
                 num_gen_updates = 10
                 max_grad_norm_g = None
                 max_grad_norm_d = self.max_grad_norm / 2**4
@@ -250,7 +253,7 @@ class GANTrainer:
 
                 # Report progress and save images every few steps
                 if i % 5 == 0:
-                    tqdm.write(f'Step [{i+1}/{len(dataloader)}], Loss D: {lossD:.4f}, Loss G: {lossG:.4f}, Grad Norm D: {grad_norm_D:.4f}, Grad Norm G: {grad_norm_G:.4f}')
+                    tqdm.write(f'Stage [{stage}/3], Step [{i+1}/{len(dataloader)}], Loss D: {lossD:.4f}, Loss G: {lossG:.4f}, Grad Norm D: {grad_norm_D:.4f}, Grad Norm G: {grad_norm_G:.4f}')
                     save_image(fake_images[:25], f'{self.output_dir}/fake_images_epoch_{epoch+1}_batch_{i+1}.png', nrow=5, normalize=True)
 
             # Save models every 10 epochs
