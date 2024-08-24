@@ -262,7 +262,7 @@ class Discriminator(nn.Module):
     Args:
         img_resolution (int): Resolution of the input image.
         base_channels (int): Base number of channels for the convolutional layers (default: 64).
-        dropout_prob (float): Dropout probability (default: 0.3).
+        dropout_prob (float): Dropout probability (default: 0.1).
 
     Methods:
         forward(x, return_features=False): Forward pass to classify the input image and optionally return intermediate features.

@@ -72,15 +72,29 @@ class GANTrainer:
         Sets:
             start_epoch (int): The epoch number to resume training from after loading the latest models.
         """
-        latest_generator_path, latest_epoch_g = self.get_latest_model_epoch('models', 'generator')
-        latest_discriminator_path, latest_epoch_d = self.get_latest_model_epoch('models', 'discriminator')
+        # Check if the models directory exists
+        if not os.path.exists(self.models_dir):
+            print(f"Model directory '{self.models_dir}' does not exist. Starting training from scratch...")
+            self.start_epoch = 0
+            return
 
-        if latest_generator_path and latest_discriminator_path:
-            map_location = None if self.device == "cuda" else torch.device('cpu')
-            self.netG.load_state_dict(torch.load(latest_generator_path, map_location=map_location))
-            self.netD.load_state_dict(torch.load(latest_discriminator_path, map_location=map_location))
-            self.start_epoch = max(latest_epoch_g, latest_epoch_d)
-            print(f"Loaded latest models from epoch {self.start_epoch}.")
+        try:
+            latest_generator_path, latest_epoch_g = self.get_latest_model_epoch(self.models_dir, 'generator')
+            latest_discriminator_path, latest_epoch_d = self.get_latest_model_epoch(self.models_dir, 'discriminator')
+
+            if latest_generator_path and latest_discriminator_path:
+                map_location = None if self.device == "cuda" else torch.device('cpu')
+                self.netG.load_state_dict(torch.load(latest_generator_path, map_location=map_location))
+                self.netD.load_state_dict(torch.load(latest_discriminator_path, map_location=map_location))
+                self.start_epoch = max(latest_epoch_g, latest_epoch_d)
+                print(f"Loaded latest models from epoch {self.start_epoch}.")
+            else:
+                print("No previous checkpoints found in the directory. Starting training from scratch...")
+
+        except Exception as e:
+            print(f"An error occurred while loading models: {e}")
+            self.start_epoch = 0
+
 
     @staticmethod
     def calculate_gradient_norm(model):
