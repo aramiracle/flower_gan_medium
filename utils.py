@@ -13,6 +13,22 @@ class GANTrainer:
     def __init__(self, latent_dim=512, num_mapping_layers=10, img_resolution=128, lr_d=1e-5, lr_g=1e-4, beta1=0.0, beta2=0.99, batch_size=50, max_grad_norm=16, data_dir='./flower_data', output_dir='generated_images'):
         """
         Initialize the GAN Trainer with necessary parameters and models.
+
+        Args:
+            latent_dim (int): Dimensionality of the latent space for the generator.
+            num_mapping_layers (int): Number of layers in the mapping network of the StyleGAN generator.
+            img_resolution (int): Resolution of the generated images (assumed to be square, e.g., 128x128).
+            lr_d (float): Learning rate for the discriminator.
+            lr_g (float): Learning rate for the generator.
+            beta1 (float): Beta1 hyperparameter for the Adam optimizer.
+            beta2 (float): Beta2 hyperparameter for the Adam optimizer.
+            batch_size (int): Number of samples per batch.
+            max_grad_norm (float): Maximum norm of the gradients for gradient clipping.
+            data_dir (str): Directory where the training data is stored.
+            output_dir (str): Directory where generated images and model checkpoints will be saved.
+
+        Sets up the device, initializes the generator and discriminator models, defines the loss function,
+        sets up optimizers for both networks, and attempts to load the latest model checkpoints if available.
         """
         self.latent_dim = latent_dim
         self.num_mapping_layers = num_mapping_layers
@@ -45,7 +61,14 @@ class GANTrainer:
 
     def load_latest_models(self):
         """
-        Load the latest saved models for the generator and discriminator.
+        Load the latest saved models for the generator and discriminator if available.
+
+        This method checks the 'models' directory for the latest checkpoints for both
+        the generator and discriminator. If found, the model states are loaded from these
+        checkpoints, and training resumes from the saved epoch.
+
+        Sets:
+            start_epoch (int): The epoch number to resume training from after loading the latest models.
         """
         latest_generator_path, latest_epoch_g = self.get_latest_model_epoch('models', 'generator')
         latest_discriminator_path, latest_epoch_d = self.get_latest_model_epoch('models', 'discriminator')
@@ -61,6 +84,15 @@ class GANTrainer:
     def calculate_gradient_norm(model):
         """
         Calculate the gradient norm of the model parameters.
+
+        Args:
+            model (torch.nn.Module): The model for which to calculate the gradient norm.
+
+        Returns:
+            float: The L2 norm of the gradients of the model parameters.
+
+        This method iterates over all the model's parameters, computes the L2 norm of the gradients
+        for each parameter, and returns the total L2 norm.
         """
         total_norm = 0.0
         for p in model.parameters():
@@ -72,7 +104,17 @@ class GANTrainer:
     @staticmethod
     def get_latest_model_epoch(model_dir, model_type):
         """
-        Get the path and epoch number of the latest saved model.
+        Get the path and epoch number of the latest saved model for the specified type.
+
+        Args:
+            model_dir (str): Directory where model checkpoints are stored.
+            model_type (str): Type of model ('generator' or 'discriminator').
+
+        Returns:
+            tuple: (str, int) Path to the latest model checkpoint and its epoch number. Returns (None, 0) if no models are found.
+
+        This method lists all files in the model directory, extracts the epoch numbers from the filenames,
+        and determines the file corresponding to the latest epoch.
         """
         model_files = [f for f in os.listdir(model_dir) if f.startswith(model_type)]
         if not model_files:
@@ -85,7 +127,17 @@ class GANTrainer:
 
     def train_discriminator(self, real_images, max_grad_norm_d):
         """
-        Train the discriminator network with real and fake images.
+        Train the discriminator network with both real and fake images for one step.
+
+        Args:
+            real_images (torch.Tensor): A batch of real images from the dataset.
+            max_grad_norm_d (float): Maximum gradient norm for discriminator gradient clipping.
+
+        Returns:
+            tuple: (float, float) Loss value for the discriminator and its gradient norm.
+
+        This method performs one step of training for the discriminator. It calculates the loss for both
+        real and fake images, backpropagates the loss, clips the gradients, and updates the discriminator's weights.
         """
         self.netD.zero_grad()
         b_size = real_images.size(0)
@@ -115,7 +167,17 @@ class GANTrainer:
 
     def train_generator(self, max_grad_norm_g):
         """
-        Train the generator network to produce realistic images.
+        Train the generator network to produce more realistic images for one step.
+
+        Args:
+            max_grad_norm_g (float or None): Maximum gradient norm for generator gradient clipping. If None, no clipping is applied.
+
+        Returns:
+            tuple: (float, float, torch.Tensor) Loss value for the generator, its gradient norm, and the generated fake images.
+
+        This method performs one step of training for the generator. It generates fake images, computes
+        the loss based on how well they fool the discriminator, backpropagates the loss, optionally clips gradients,
+        and updates the generator's weights.
         """
         self.netG.zero_grad()
         noise = torch.randn(self.batch_size, self.latent_dim, device=self.device)
@@ -137,7 +199,16 @@ class GANTrainer:
 
     def train(self, num_epochs=1000):
         """
-        Main training loop for GAN. Updates Discriminator and Generator over multiple epochs.
+        Main training loop for the GAN. Updates the Discriminator and Generator over multiple epochs.
+
+        Args:
+            num_epochs (int): Number of epochs to train the GAN.
+
+        This method handles the overall training process, including:
+        - Loading the dataset and setting up the data loader.
+        - Training both the discriminator and generator for the specified number of epochs.
+        - Dynamically adjusting the number of generator updates and gradient clipping norms based on the epoch.
+        - Saving intermediate results and model checkpoints periodically.
         """
         for epoch in range(self.start_epoch, num_epochs):
             # Adjust training parameters based on epoch
@@ -188,6 +259,16 @@ class GANTrainer:
     def generate_fake_images(self, generator_path, num_images=256, batch_size=64):
         """
         Generate and save fake images using the trained generator.
+
+        Args:
+            generator_path (str): Path to the trained generator model checkpoint.
+            num_images (int): Total number of fake images to generate.
+            batch_size (int): Number of images to generate per batch.
+
+        This method loads a trained generator, uses it to generate a specified number of fake images,
+        saves each generated image individually, and also creates a grid of all generated images.
+
+        The generated images are saved in the output directory, and a grid of images is saved as 'fake_images_grid.png'.
         """
         # Create output directories if they don't exist
         os.makedirs(self.output_dir, exist_ok=True)
