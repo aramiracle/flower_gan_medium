@@ -10,7 +10,7 @@ from tqdm import tqdm
 from models import StyleGANGenerator, Discriminator
 
 class GANTrainer:
-    def __init__(self, latent_dim=512, num_mapping_layers=10, img_resolution=128, lr_d=1e-5, lr_g=1e-4, beta1=0.0, beta2=0.99, batch_size=50, max_grad_norm=16, data_dir='./flower_data', models_dir='models', output_dir='generated_images'):
+    def __init__(self, latent_dim=512, num_mapping_layers=10, img_resolution=128, lr_d=1e-5, lr_g=1e-4, beta1=0.0, beta2=0.99, batch_size=50, max_grad_norm=16, data_dir='./flower_data', models_dir='models', generated_images_dir='generated_images'):
         """
         Initialize the GAN Trainer with necessary parameters and models.
 
@@ -42,7 +42,7 @@ class GANTrainer:
         self.max_grad_norm = max_grad_norm
         self.data_dir = data_dir
         self.models_dir = models_dir
-        self.output_dir = output_dir
+        self.generated_images_dir = generated_images_dir
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Calculate the number of synthesis blocks based on image resolution
@@ -212,14 +212,18 @@ class GANTrainer:
         - Dynamically adjusting the number of generator updates and gradient clipping norms based on the epoch.
         - Saving intermediate results and model checkpoints periodically.
         """
+        # Create directories for saving generated images and model weights
+        os.makedirs(self.generated_images_dir, exist_ok=True)
+        os.makedirs(self.models_dir, exist_ok=True)
+
         for epoch in range(self.start_epoch, num_epochs):
             # Adjust training parameters based on epoch
-            if epoch < num_epochs // 3:
+            if epoch < num_epochs // 2:
                 stage = 1
                 num_gen_updates = 1
                 max_grad_norm_g = self.max_grad_norm * 2**1
                 max_grad_norm_d = self.max_grad_norm / 2**1
-            elif epoch < 2 * num_epochs // 3:
+            elif epoch < 3 * num_epochs // 4:
                 stage = 2
                 num_gen_updates = 3
                 max_grad_norm_g = self.max_grad_norm * 2**3
@@ -228,7 +232,7 @@ class GANTrainer:
                 stage = 3
                 num_gen_updates = 10
                 max_grad_norm_g = None
-                max_grad_norm_d = self.max_grad_norm / 2**4
+                max_grad_norm_d = self.max_grad_norm / 2**5
 
             # Define transformations for image preprocessing
             transform = transforms.Compose([
@@ -254,7 +258,7 @@ class GANTrainer:
                 # Report progress and save images every few steps
                 if i % 5 == 0:
                     tqdm.write(f'Stage [{stage}/3], Step [{i+1}/{len(dataloader)}], Loss D: {lossD:.4f}, Loss G: {lossG:.4f}, Grad Norm D: {grad_norm_D:.4f}, Grad Norm G: {grad_norm_G:.4f}')
-                    save_image(fake_images[:25], f'{self.output_dir}/fake_images_epoch_{epoch+1}_batch_{i+1}.png', nrow=5, normalize=True)
+                    save_image(fake_images[:25], f'{self.generated_images_dir}/fake_images_epoch_{epoch+1}_batch_{i+1}.png', nrow=5, normalize=True)
 
             # Save models every 10 epochs
             if (epoch+1) % 10 == 0:
@@ -276,8 +280,8 @@ class GANTrainer:
         The generated images are saved in the output directory, and a grid of images is saved as 'fake_images_grid.png'.
         """
         # Create output directories if they don't exist
-        os.makedirs(self.output_dir, exist_ok=True)
-        dataset_dir = os.path.join(self.output_dir, 'fake_dataset')
+        os.makedirs(self.generated_images_dir, exist_ok=True)
+        dataset_dir = os.path.join(self.generated_images_dir, 'fake_dataset')
         os.makedirs(dataset_dir, exist_ok=True)
 
         # Load the trained generator model

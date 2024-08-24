@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 class MappingNetwork(nn.Module):
     """
     A mapping network that transforms a latent vector (z) into a higher-dimensional space.
@@ -92,6 +93,9 @@ class ModulatedConv2d(nn.Module):
         # Padding to maintain spatial dimensions after convolution
         self.padding = kernel_size // 2
 
+        # Batch normalization
+        self.batch_norm = nn.BatchNorm2d(out_channels)
+
     def forward(self, x, w):
         b = x.size(0)  # Batch size
 
@@ -115,6 +119,9 @@ class ModulatedConv2d(nn.Module):
         x = x.view(1, b * x.size(1), x.size(2), x.size(3))
         x = F.conv2d(x, weight, padding=self.padding, groups=b)
         x = x.view(b, -1, x.size(2), x.size(3))
+
+        # Apply batch normalization after convolution
+        x = self.batch_norm(x)
 
         return x
 
@@ -282,7 +289,8 @@ class Discriminator(nn.Module):
         while current_resolution > 4:
             self.blocks.append(nn.Sequential(
                 nn.Conv2d(channels, channels * 2, 4, 2, 1),
-                nn.LeakyReLU(0.2)
+                nn.LeakyReLU(0.2),
+                nn.BatchNorm2d(channels * 2)
             ))
             channels *= 2
             current_resolution //= 2
@@ -291,6 +299,7 @@ class Discriminator(nn.Module):
         self.blocks.append(nn.Sequential(
             nn.Conv2d(channels, channels, 4, 1, 0),
             nn.LeakyReLU(0.2),
+            nn.BatchNorm2d(channels),
             nn.Flatten()  # Flatten the output
         ))
 

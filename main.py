@@ -13,12 +13,12 @@ if __name__ == "__main__":
     beta1 = 0.0
     beta2 = 0.99
     num_epochs = 1000
-    batch_size = 50
-    max_grad_norm = 16
+    batch_size = 40
+    max_grad_norm = 32
     data_dir='flower_data'
     models_dir = 'models'
-    output_dir='generated_images'
+    generated_images_dir='generated_images'
 
-    gan_trainer = GANTrainer(latent_dim, num_mapping_layers, img_resolution, lr_d, lr_g, beta1, beta2, batch_size, max_grad_norm, data_dir, output_dir)
+    gan_trainer = GANTrainer(latent_dim, num_mapping_layers, img_resolution, lr_d, lr_g, beta1, beta2, batch_size, max_grad_norm, data_dir, generated_images_dir)
     gan_trainer.train(num_epochs)
     gan_trainer.generate_fake_images(generator_path=f'{models_dir}/generator_epoch_{num_epochs}.pth')
