@@ -257,41 +257,46 @@ class MinibatchDiscrimination(nn.Module):
 class Discriminator(nn.Module):
     """
     Discriminator network that classifies images as real or fake and extracts intermediate features for analysis.
-    This network consists of multiple convolutional blocks and a minibatch discrimination layer.
+    This network consists of multiple convolutional blocks with dropout and a minibatch discrimination layer.
 
     Args:
         img_resolution (int): Resolution of the input image.
         base_channels (int): Base number of channels for the convolutional layers (default: 64).
+        dropout_prob (float): Dropout probability (default: 0.3).
 
     Methods:
         forward(x, return_features=False): Forward pass to classify the input image and optionally return intermediate features.
     """
-    def __init__(self, img_resolution, base_channels=64):
+    def __init__(self, img_resolution, base_channels=64, dropout_prob=0.3):
         super().__init__()
         self.blocks = nn.ModuleList()
         channels = base_channels
+        self.dropout_prob = dropout_prob  # Dropout probability
 
-        # Initial convolutional block
+        # Initial convolutional block with dropout
         self.blocks.append(nn.Sequential(
             nn.Conv2d(3, channels, 4, 2, 1),  # Convolution to reduce image size
-            nn.LeakyReLU(0.2)  # Activation function
+            nn.LeakyReLU(0.2),  # Activation function
+            nn.Dropout(self.dropout_prob)  # Add dropout layer
         ))
 
         current_resolution = img_resolution // 2
 
-        # Subsequent convolutional blocks with increasing channels
+        # Subsequent convolutional blocks with increasing channels and dropout
         while current_resolution > 4:
             self.blocks.append(nn.Sequential(
                 nn.Conv2d(channels, channels * 2, 4, 2, 1),
                 nn.LeakyReLU(0.2),
+                nn.Dropout(self.dropout_prob)  # Add dropout layer
             ))
             channels *= 2
             current_resolution //= 2
 
-        # Final convolutional block and flattening
+        # Final convolutional block and flattening with dropout
         self.blocks.append(nn.Sequential(
             nn.Conv2d(channels, channels, 4, 1, 0),
             nn.LeakyReLU(0.2),
+            nn.Dropout(self.dropout_prob),  # Add dropout layer before flattening
             nn.Flatten()  # Flatten the output
         ))
 
