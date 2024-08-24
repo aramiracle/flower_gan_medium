@@ -10,7 +10,7 @@ from tqdm import tqdm
 from models import StyleGANGenerator, Discriminator
 
 class GANTrainer:
-    def __init__(self, latent_dim=512, num_mapping_layers=10, img_resolution=128, lr_d=1e-5, lr_g=1e-4, beta1=0.0, beta2=0.99, batch_size=50, max_grad_norm=16, data_dir='./flower_data', output_dir='generated_images'):
+    def __init__(self, latent_dim=512, num_mapping_layers=10, img_resolution=128, lr_d=1e-5, lr_g=1e-4, beta1=0.0, beta2=0.99, batch_size=50, max_grad_norm=16, data_dir='./flower_data', models_dir='models', output_dir='generated_images'):
         """
         Initialize the GAN Trainer with necessary parameters and models.
 
@@ -25,7 +25,8 @@ class GANTrainer:
             batch_size (int): Number of samples per batch.
             max_grad_norm (float): Maximum norm of the gradients for gradient clipping.
             data_dir (str): Directory where the training data is stored.
-            output_dir (str): Directory where generated images and model checkpoints will be saved.
+            models_dir (str): Directory where model checkpoints will be saved.
+            output_dir (str): Directory where generated images of each epochs will be saved.
 
         Sets up the device, initializes the generator and discriminator models, defines the loss function,
         sets up optimizers for both networks, and attempts to load the latest model checkpoints if available.
@@ -40,6 +41,7 @@ class GANTrainer:
         self.batch_size = batch_size
         self.max_grad_norm = max_grad_norm
         self.data_dir = data_dir
+        self.models_dir = models_dir
         self.output_dir = output_dir
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -253,8 +255,8 @@ class GANTrainer:
 
             # Save models every 10 epochs
             if (epoch+1) % 10 == 0:
-                torch.save(self.netG.state_dict(), f'models/generator_epoch_{epoch+1}.pth')
-                torch.save(self.netD.state_dict(), f'models/discriminator_epoch_{epoch+1}.pth')
+                torch.save(self.netG.state_dict(), f'{self.models_dir}/generator_epoch_{epoch+1}.pth')
+                torch.save(self.netD.state_dict(), f'{self.models_dir}/discriminator_epoch_{epoch+1}.pth')
 
     def generate_fake_images(self, generator_path, num_images=256, batch_size=64):
         """
