@@ -12,8 +12,8 @@ if __name__ == "__main__":
     lr_g = 1e-4
     beta1 = 0.0
     beta2 = 0.99
-    num_epochs = 1000
-    batch_size = 40
+    num_epochs = 400
+    batch_size = 48
     max_grad_norm = 32
     data_dir='flower_data'
     models_dir = 'models'
