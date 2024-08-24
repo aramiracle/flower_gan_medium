@@ -257,7 +257,7 @@ class GANTrainer:
 
                 # Report progress and save images every few steps
                 if i % 5 == 0:
-                    tqdm.write(f'Stage [{stage}/3], Step [{i+1}/{len(dataloader)}], Loss D: {lossD:.4f}, Loss G: {lossG:.4f}, Grad Norm D: {grad_norm_D:.4f}, Grad Norm G: {grad_norm_G:.4f}')
+                    tqdm.write(f'Stage [{stage}/3], Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{len(dataloader)}], Loss D: {lossD:.4f}, Loss G: {lossG:.4f}, Grad Norm D: {grad_norm_D:.4f}, Grad Norm G: {grad_norm_G:.4f}')
                     save_image(fake_images[:25], f'{self.generated_images_dir}/fake_images_epoch_{epoch+1}_batch_{i+1}.png', nrow=5, normalize=True)
 
             # Save models every 10 epochs
