@@ -174,7 +174,9 @@ class GANTrainer:
 
         # Compute total loss and update Discriminator
         lossD = lossD_real + lossD_fake
-        nn.utils.clip_grad_norm_(self.netD.parameters(), max_grad_norm_d)
+        if max_grad_norm_d:
+            # Clip gradients if max gradient norm is set
+            nn.utils.clip_grad_norm_(self.netD.parameters(), max_grad_norm_d)
         self.optimizerD.step()
 
         # Compute gradient norm for the Discriminator

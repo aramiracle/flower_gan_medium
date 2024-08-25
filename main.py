@@ -19,6 +19,6 @@ if __name__ == "__main__":
     models_dir = 'models'
     generated_images_dir='generated_images'
 
-    gan_trainer = GANTrainer(latent_dim, num_mapping_layers, img_resolution, lr_d, lr_g, beta1, beta2, batch_size, max_grad_norm, data_dir, generated_images_dir)
+    gan_trainer = GANTrainer(latent_dim, num_mapping_layers, img_resolution, lr_d, lr_g, beta1, beta2, batch_size, max_grad_norm, data_dir, models_dir, generated_images_dir)
     gan_trainer.train(num_epochs)
     gan_trainer.generate_fake_images(generator_path=f'{models_dir}/generator_epoch_{num_epochs}.pth')
