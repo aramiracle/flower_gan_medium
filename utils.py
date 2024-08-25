@@ -246,9 +246,9 @@ class GANTrainer:
                 max_grad_norm_d = self.max_grad_norm / 2**3
             else:
                 stage = 3
-                num_gen_updates = 10
+                num_gen_updates = 5
                 max_grad_norm_g = None
-                max_grad_norm_d = self.max_grad_norm / 2**5
+                max_grad_norm_d = None
 
             # Define transformations for image preprocessing
             transform = transforms.Compose([
@@ -324,5 +324,5 @@ class GANTrainer:
         # Save a grid of all generated images
         all_images = torch.stack(all_images)
         grid = make_grid(all_images, nrow=int(torch.sqrt(torch.tensor(num_images))), normalize=True)
-        save_image(grid, os.path.join(self.output_dir, 'fake_images_grid.png'), normalize=True)
+        save_image(grid, os.path.join(self.generated_images_dir, 'fake_images_grid.png'), normalize=True)
         print('Saved the image grid as fake_images_grid.png')
