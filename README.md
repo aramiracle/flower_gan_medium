@@ -47,8 +47,8 @@ To set up this project, follow these steps:
 1. **Clone the repository**:
 
 ```
-git clone https://github.com/yourusername/stylegan-flower-generator.git
-cd stylegan-flower-generator
+git clone https://github.com/aramiracle/flower-gan-medium
+cd flower-gan-medium
 ```
 2. **Install the required dependencies**:
 
