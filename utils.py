@@ -10,11 +10,12 @@ from tqdm import tqdm
 from models import StyleGANGenerator, Discriminator
 
 class GANTrainer:
-    def __init__(self, latent_dim=512, num_mapping_layers=10, img_resolution=128, lr_d=1e-5, lr_g=1e-4, beta1=0.0, beta2=0.99, batch_size=50, max_grad_norm=16, data_dir='./flower_data', models_dir='models', generated_images_dir='generated_images'):
+    def __init__(self, num_epochs=400, latent_dim=512, num_mapping_layers=10, img_resolution=128, lr_d=1e-5, lr_g=1e-4, beta1=0.0, beta2=0.99, batch_size=50, max_grad_norm=16, data_dir='./flower_data', models_dir='models', generated_images_dir='generated_images'):
         """
         Initialize the GAN Trainer with necessary parameters and models.
 
         Args:
+            num_epochs (int): Number of epochs model should train.
             latent_dim (int): Dimensionality of the latent space for the generator.
             num_mapping_layers (int): Number of layers in the mapping network of the StyleGAN generator.
             img_resolution (int): Resolution of the generated images (assumed to be square, e.g., 128x128).
@@ -31,6 +32,7 @@ class GANTrainer:
         Sets up the device, initializes the generator and discriminator models, defines the loss function,
         sets up optimizers for both networks, and attempts to load the latest model checkpoints if available.
         """
+        self.num_epochs = num_epochs
         self.latent_dim = latent_dim
         self.num_mapping_layers = num_mapping_layers
         self.img_resolution = img_resolution
@@ -215,7 +217,7 @@ class GANTrainer:
         grad_norm_G = self.calculate_gradient_norm(self.netG)
         return lossG.item(), grad_norm_G, fake_images
 
-    def train(self, num_epochs=1000):
+    def train(self):
         """
         Main training loop for the GAN. Updates the Discriminator and Generator over multiple epochs.
 
@@ -232,14 +234,14 @@ class GANTrainer:
         os.makedirs(self.generated_images_dir, exist_ok=True)
         os.makedirs(self.models_dir, exist_ok=True)
 
-        for epoch in range(self.start_epoch, num_epochs):
+        for epoch in range(self.start_epoch, self.num_epochs):
             # Adjust training parameters based on epoch
-            if epoch < num_epochs // 2:
+            if epoch < self.num_epochs // 2:
                 stage = 1
                 num_gen_updates = 1
                 max_grad_norm_g = self.max_grad_norm * 2**1
                 max_grad_norm_d = self.max_grad_norm / 2**1
-            elif epoch < 3 * num_epochs // 4:
+            elif epoch < 3 * self.num_epochs // 4:
                 stage = 2
                 num_gen_updates = 3
                 max_grad_norm_g = self.max_grad_norm * 2**3
@@ -263,7 +265,7 @@ class GANTrainer:
             dataset = datasets.Flowers102(root=self.data_dir, split="train", download=True, transform=transform)
             dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True, num_workers=4, pin_memory=True)
 
-            for i, data in enumerate(tqdm(dataloader, desc=f'Epoch {epoch+1}/{num_epochs}'), 0):
+            for i, data in enumerate(tqdm(dataloader, desc=f'Epoch {epoch+1}/{self.num_epochs}'), 0):
                 real_images = data[0].to(self.device)
                 lossD, grad_norm_D = self.train_discriminator(real_images, max_grad_norm_d)
 
@@ -273,7 +275,7 @@ class GANTrainer:
 
                 # Report progress and save images every few steps
                 if i % 5 == 0:
-                    tqdm.write(f'Stage [{stage}/3], Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{len(dataloader)}], Loss D: {lossD:.4f}, Loss G: {lossG:.4f}, Grad Norm D: {grad_norm_D:.4f}, Grad Norm G: {grad_norm_G:.4f}')
+                    tqdm.write(f'Stage [{stage}/3], Epoch [{epoch+1}/{self.num_epochs}], Step [{i+1}/{len(dataloader)}], Loss D: {lossD:.4f}, Loss G: {lossG:.4f}, Grad Norm D: {grad_norm_D:.4f}, Grad Norm G: {grad_norm_G:.4f}')
                     save_image(fake_images[:25], f'{self.generated_images_dir}/fake_images_epoch_{epoch+1}_batch_{i+1}.png', nrow=5, normalize=True)
 
             # Save models every 10 epochs
@@ -324,5 +326,5 @@ class GANTrainer:
         # Save a grid of all generated images
         all_images = torch.stack(all_images)
         grid = make_grid(all_images, nrow=int(torch.sqrt(torch.tensor(num_images))), normalize=True)
-        save_image(grid, os.path.join(self.generated_images_dir, 'fake_images_grid.png'), normalize=True)
+        save_image(grid, os.path.join(self.generated_images_dir, f'fake_images_grid_epoch_{self.num_epochs}.png'), normalize=True)
         print('Saved the image grid as fake_images_grid.png')
