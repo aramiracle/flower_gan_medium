@@ -83,4 +83,5 @@ Models after train produce a fake dataset and example of generated images in `ge
 ## Conclusion
 
 By following these steps, you should be able to train a StyleGAN model on a flower dataset and generate new, realistic flower images. For more information on the project, please check my story on medium website. This is the [link](https://medium.com/@a.r.amouzad.m/stylegan-for-creating-flower-images-d29ac8391f7e).
-Also if you want trained model you can find it Kaggle. This is the [Link](https://www.kaggle.com/models/alirezaamouzad/stylegan_flower_128x128)
+
+Also if you want trained model you can find it Kaggle. This is the [Link](https://www.kaggle.com/models/alirezaamouzad/stylegan_flower_128x128).
