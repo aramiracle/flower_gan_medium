@@ -316,4 +316,3 @@ class Discriminator(nn.Module):
         if return_features:
             return x.view(-1), features  # Return both classification and features
         return x.view(-1)  # Return classification only
-    
